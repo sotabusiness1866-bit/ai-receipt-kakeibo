@@ -1,23 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [status, setStatus] = useState<
-    "idle" | "sending" | "sent" | "verifying" | "error"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
+    "idle"
+  );
   const [errorMessage, setErrorMessage] = useState("");
 
-  async function handleSendCode(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("sending");
     setErrorMessage("");
@@ -37,29 +33,6 @@ export default function LoginPage() {
     }
 
     setStatus("sent");
-    setStep("code");
-  }
-
-  async function handleVerifyCode(e: React.FormEvent) {
-    e.preventDefault();
-    setStatus("verifying");
-    setErrorMessage("");
-
-    const supabase = createClient();
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: code,
-      type: "email",
-    });
-
-    if (error) {
-      setStatus("error");
-      setErrorMessage(error.message);
-      return;
-    }
-
-    router.push("/");
-    router.refresh();
   }
 
   return (
@@ -75,53 +48,18 @@ export default function LoginPage() {
         </div>
 
         <Card>
-          {step === "code" ? (
-            <form
-              onSubmit={handleVerifyCode}
-              className="flex flex-col gap-4"
-            >
-              <div className="text-center">
-                <p className="text-sm font-medium text-gray-900">
-                  確認コードを入力してください
-                </p>
-                <p className="mt-2 text-sm text-gray-500">
-                  {email} 宛に6桁のコードを送信しました。
-                  メールに記載のコードを入力してください。
-                </p>
-              </div>
-              <Input
-                id="code"
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                label="確認コード"
-                placeholder="123456"
-                maxLength={6}
-                required
-                value={code}
-                onChange={(e) =>
-                  setCode(e.target.value.replace(/[^0-9]/g, ""))
-                }
-                error={status === "error" ? errorMessage : undefined}
-              />
-              <Button type="submit" disabled={status === "verifying"}>
-                {status === "verifying" ? "確認中..." : "ログイン"}
-              </Button>
-              <button
-                type="button"
-                className="text-xs text-gray-500 underline"
-                onClick={() => {
-                  setStep("email");
-                  setStatus("idle");
-                  setCode("");
-                  setErrorMessage("");
-                }}
-              >
-                メールアドレスを入力し直す
-              </button>
-            </form>
+          {status === "sent" ? (
+            <div className="py-4 text-center">
+              <p className="text-sm font-medium text-gray-900">
+                メールを確認してください
+              </p>
+              <p className="mt-2 text-sm text-gray-500">
+                {email} 宛にログイン用のリンクを送信しました。
+                メール内のリンクをクリックしてログインしてください。
+              </p>
+            </div>
           ) : (
-            <form onSubmit={handleSendCode} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <Input
                 id="email"
                 type="email"
@@ -133,7 +71,7 @@ export default function LoginPage() {
                 error={status === "error" ? errorMessage : undefined}
               />
               <Button type="submit" disabled={status === "sending"}>
-                {status === "sending" ? "送信中..." : "確認コードを送信"}
+                {status === "sending" ? "送信中..." : "ログインリンクを送信"}
               </Button>
             </form>
           )}
