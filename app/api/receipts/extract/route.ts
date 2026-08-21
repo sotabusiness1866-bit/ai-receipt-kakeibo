@@ -70,6 +70,7 @@ export async function POST(request: Request) {
     );
     return NextResponse.json({ data: extracted });
   } catch (err) {
+    console.error("receipt extraction failed", err);
     if (err instanceof ReceiptExtractionError) {
       return NextResponse.json({ error: err.message }, { status: 422 });
     }

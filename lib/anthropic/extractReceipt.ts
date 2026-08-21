@@ -38,7 +38,6 @@ export class ReceiptExtractionError extends Error {}
 
 /**
  * レシート画像をClaude Vision APIに渡し、店名・日付・金額・カテゴリを抽出する。
- * claude-haiku-4-5はoutput_config.effortを未対応（400エラー）のため付与しない。
  */
 export async function extractReceiptData(
   base64Data: string,
@@ -47,7 +46,7 @@ export async function extractReceiptData(
   const client = getAnthropicClient();
 
   const response = await client.messages.create({
-    model: "claude-haiku-4-5",
+    model: "claude-sonnet-5",
     max_tokens: 1024,
     system:
       "あなたはレシート画像から店名・購入日・合計金額・支出カテゴリを抽出する専門アシスタントです。" +
