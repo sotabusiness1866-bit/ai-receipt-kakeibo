@@ -29,6 +29,58 @@ const EMPTY_FORM: FormState = {
   memo: "",
 };
 
+// SafariはHEICをOSレベルでネイティブ表示できるため、まずcanvas経由での
+// デコードを試みる。heic2anyの内蔵デコーダは新しいiPhoneが生成するHDR系の
+// HEICバリエーションに対応できないことがあるための代替手段。
+async function heicToJpegViaCanvas(blob: Blob): Promise<Blob> {
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = new Image();
+    const loaded = await new Promise<boolean>((resolve) => {
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    });
+    if (!loaded || img.naturalWidth === 0) {
+      throw new Error("この形式のHEIC画像はブラウザで表示できません");
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("画像の変換に対応していないブラウザです");
+    }
+    ctx.drawImage(img, 0, 0);
+
+    const jpegBlob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((b) => resolve(b), "image/jpeg", 0.9)
+    );
+    if (!jpegBlob) {
+      throw new Error("JPEGへの変換に失敗しました");
+    }
+    return jpegBlob;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function convertHeicToJpeg(original: File): Promise<Blob> {
+  try {
+    return await heicToJpegViaCanvas(original);
+  } catch (canvasErr) {
+    console.error("native HEIC decode failed, falling back to heic2any", canvasErr);
+    const heic2any = (await import("heic2any")).default;
+    const converted = await heic2any({
+      blob: original,
+      toType: "image/jpeg",
+      quality: 0.9,
+    });
+    return Array.isArray(converted) ? converted[0] : converted;
+  }
+}
+
 export function ReceiptUploadForm() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,13 +108,7 @@ export function ReceiptUploadForm() {
 
       let file = original;
       if (isHeic) {
-        const heic2any = (await import("heic2any")).default;
-        const converted = await heic2any({
-          blob: original,
-          toType: "image/jpeg",
-          quality: 0.9,
-        });
-        const jpegBlob = Array.isArray(converted) ? converted[0] : converted;
+        const jpegBlob = await convertHeicToJpeg(original);
         file = new File(
           [jpegBlob],
           original.name.replace(/\.(heic|heif)$/i, ".jpg"),
