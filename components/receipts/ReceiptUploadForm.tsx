@@ -41,15 +41,37 @@ export function ReceiptUploadForm() {
   const [analysisFailed, setAnalysisFailed] = useState(false);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const original = e.target.files?.[0];
+    if (!original) return;
 
     setErrorMessage(null);
     setAnalysisFailed(false);
-    setPreviewUrl(URL.createObjectURL(file));
     setStep("analyzing");
 
     try {
+      const isHeic =
+        /\.(heic|heif)$/i.test(original.name) ||
+        original.type === "image/heic" ||
+        original.type === "image/heif";
+
+      let file = original;
+      if (isHeic) {
+        const heic2any = (await import("heic2any")).default;
+        const converted = await heic2any({
+          blob: original,
+          toType: "image/jpeg",
+          quality: 0.9,
+        });
+        const jpegBlob = Array.isArray(converted) ? converted[0] : converted;
+        file = new File(
+          [jpegBlob],
+          original.name.replace(/\.(heic|heif)$/i, ".jpg"),
+          { type: "image/jpeg" }
+        );
+      }
+
+      setPreviewUrl(URL.createObjectURL(file));
+
       const supabase = createClient();
       const {
         data: { user },
