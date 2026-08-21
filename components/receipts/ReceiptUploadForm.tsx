@@ -118,9 +118,14 @@ export function ReceiptUploadForm() {
       });
       setStep("review");
     } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : "予期しないエラーが発生しました"
-      );
+      console.error("receipt upload failed", err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "message" in err
+            ? String((err as { message: unknown }).message)
+            : "予期しないエラーが発生しました";
+      setErrorMessage(message);
       setStep("select");
     }
   }
