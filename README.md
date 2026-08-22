@@ -4,9 +4,9 @@
 
 ## 技術スタック
 
-- Next.js 15 (App Router, TypeScript) / Tailwind CSS
+- Next.js 16 (App Router, TypeScript) / Tailwind CSS
 - Supabase（Auth・Postgres・Storage）
-- Anthropic Claude API（`claude-haiku-4-5`, Vision + Structured Outputs）
+- Anthropic Claude API（`claude-sonnet-5`, Vision + Structured Outputs）
 - recharts（カテゴリ別内訳グラフ）
 
 ## セットアップ手順
