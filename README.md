@@ -30,6 +30,8 @@ Supabaseダッシュボードの **SQL Editor** で `supabase/migrations/0001_in
 - **Authentication → URL Configuration** の Redirect URLs に以下を追加
   - `http://localhost:3000/auth/callback`（開発用）
   - 本番URLの `https://<your-domain>/auth/callback`（デプロイ後）
+- ログイン画面は `shouldCreateUser: false` で新規サインアップを拒否する招待制です。**Authentication → Users → Add user** から自分（および招待したい相手）のメールアドレスを事前に作成してください。未登録のメールでは「このメールアドレスは登録されていません。」と表示されログインできません。
+  - これは、公開URLを知った第三者が勝手にアカウント作成してレシート解析（Anthropic APIの従量課金）を使えてしまうのを防ぐための設定です。
 
 ### 4. Anthropic APIキーを取得
 
