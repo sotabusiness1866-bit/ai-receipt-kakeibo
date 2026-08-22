@@ -30,7 +30,8 @@ export default function LoginPage() {
     if (error) {
       setStatus("error");
       setErrorMessage(
-        error.code === "signup_disabled"
+        error.code === "signup_disabled" ||
+          error.message.includes("Signups not allowed")
           ? "このメールアドレスは登録されていません。"
           : error.message
       );
